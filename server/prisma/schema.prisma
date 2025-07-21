@@ -1,0 +1,195 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+enum Highlight {
+  HighSpeedInternetAccess
+  WasherDryer
+  AirConditioning
+  Heating
+  SmokeFree
+  CableReady
+  SatelliteTV
+  DoubleVanities
+  TubShower
+  Intercom
+  SprinklerSystem
+  RecentlyRenovated
+  CloseToTransit
+  GreatView
+  QuietNeighborhood
+}
+
+enum Amenity {
+  WasherDryer
+  AirConditioning
+  Dishwasher
+  HighSpeedInternet
+  HardwoodFloors
+  WalkInClosets
+  Microwave
+  Refrigerator
+  Pool
+  Gym
+  Parking
+  PetsAllowed
+  WiFi
+}
+
+enum PropertyType {
+  Rooms
+  Tinyhouse
+  Apartment
+  Villa
+  Townhouse
+  Cottage
+}
+
+enum ApplicationStatus {
+  Pending
+  Denied
+  Approved
+}
+
+enum PaymentStatus {
+  Pending
+  Paid
+  PartiallyPaid
+  Overdue
+}
+
+model Property {
+  id                Int          @id @default(autoincrement())
+  name              String
+  description       String
+  pricePerMonth     Float
+  securityDeposit   Float
+  applicationFee    Float
+  photoUrls         String[]
+  amenities         Amenity[]
+  highlights        Highlight[]
+  isPetsAllowed     Boolean      @default(false)
+  isParkingIncluded Boolean      @default(false)
+  beds              Int
+  baths             Float
+  squareFeet        Int
+  propertyType      PropertyType
+  postedDate        DateTime     @default(now())
+  averageRating     Float?       @default(0)
+  numberOfReviews   Int?         @default(0)
+
+  // one to many(many side)
+  locationId        Int
+  location     Location      @relation(fields: [locationId], references: [id])
+  // one to many(many side)
+  managerCognitoId  String
+  manager      Manager       @relation(fields: [managerCognitoId], references: [cognitoId])
+  // one to many(one side)
+  leases       Lease[]
+  // one to many(one side)
+  applications Application[]
+  // many to many
+  favoritedBy  Tenant[]      @relation("TenantFavorites")
+  // many to many
+  tenants      Tenant[]      @relation("TenantProperties")
+}
+
+model Manager {
+  id          Int    @id @default(autoincrement())
+  cognitoId   String @unique
+  name        String
+  email       String
+  phoneNumber String
+
+  //one to many(one side)
+  managedProperties Property[]
+}
+
+model Tenant {
+  id          Int    @id @default(autoincrement())
+  cognitoId   String @unique
+  name        String
+  email       String
+  phoneNumber String
+
+  // many to many
+  properties   Property[]    @relation("TenantProperties")
+  // many to many
+  favorites    Property[]    @relation("TenantFavorites")
+  // one to many(one side)
+  applications Application[]
+  // one to many(one side)
+  leases       Lease[]
+}
+
+model Location {
+  id          Int                                   @id @default(autoincrement())
+  address     String
+  city        String
+  state       String
+  country     String
+  postalCode  String
+  coordinates Unsupported("geography(Point, 4326)")
+
+  // one to many(one side)
+  properties Property[]
+}
+
+model Application {
+  id              Int               @id @default(autoincrement())
+  applicationDate DateTime
+  status          ApplicationStatus
+  name            String
+  email           String
+  phoneNumber     String
+  message         String?
+ 
+  // one to many(many side)
+  propertyId      Int
+  property Property @relation(fields: [propertyId], references: [id])
+  // one to many(many side)
+  tenantCognitoId String
+  tenant   Tenant   @relation(fields: [tenantCognitoId], references: [cognitoId])
+  // one to one(FK owner)
+  leaseId         Int?              @unique
+  lease    Lease?   @relation(fields: [leaseId], references: [id])
+}
+
+model Lease {
+  id              Int      @id @default(autoincrement())
+  startDate       DateTime
+  endDate         DateTime
+  rent            Float
+  deposit         Float
+
+  // one to many(many side)
+  propertyId      Int
+  property    Property     @relation(fields: [propertyId], references: [id])
+  // one to many(many side)
+  tenantCognitoId String
+  tenant      Tenant       @relation(fields: [tenantCognitoId], references: [cognitoId])
+  // one to one(Fk inverse side)
+  application Application?
+  // one to many(one side)
+  payments    Payment[]
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  amountDue     Float
+  amountPaid    Float
+  dueDate       DateTime
+  paymentDate   DateTime
+  paymentStatus PaymentStatus
+
+  // one to many(many side)
+  leaseId       Int
+  lease Lease @relation(fields: [leaseId], references: [id])
+}
