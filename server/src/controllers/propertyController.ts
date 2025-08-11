@@ -81,7 +81,12 @@ export const getProperties = async (
 
     if (amenities && amenities !== "any") {
       const amenitiesArray = (amenities as string).split(",");
-      whereConditions.push(Prisma.sql`p.amenities @> ${amenitiesArray}`);
+
+      const amenitiesLiteral = Prisma.sql`ARRAY[${Prisma.join(
+        amenitiesArray.map((a) => Prisma.sql`${a}`)
+      )}]::"Amenity"[]`;
+
+      whereConditions.push(Prisma.sql`p.amenities @> ${amenitiesLiteral}`);
     }
 
     if (availableFrom && availableFrom !== "any") {
@@ -94,7 +99,7 @@ export const getProperties = async (
             Prisma.sql`EXISTS (
               SELECT 1 FROM "Lease" l 
               WHERE l."propertyId" = p.id 
-              AND l."startDate" <= ${date.toISOString()}
+              AND l."startDate" <= ${date.toISOString()}::timestamp
             )`
           );
         }

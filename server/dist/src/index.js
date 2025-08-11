@@ -17,15 +17,15 @@ const propertyRoutes_1 = __importDefault(require("./routes/propertyRoutes"));
 const leaseRoutes_1 = __importDefault(require("./routes/leaseRoutes"));
 const applicationRoutes_1 = __importDefault(require("./routes/applicationRoutes"));
 /* CONFIGURATIONS*/
-dotenv_1.default.config();
-const app = (0, express_1.default)();
-app.use(express_1.default.json());
-app.use((0, helmet_1.default)());
-app.use(helmet_1.default.crossOriginResourcePolicy({ policy: "cross-origin" }));
-app.use((0, morgan_1.default)("common"));
+dotenv_1.default.config(); //loads env variables from .env in to process.en
+const app = (0, express_1.default)(); // initializes express
+app.use(express_1.default.json()); // parses incoming requests with JSON payloads into req.body.
+app.use((0, helmet_1.default)()); //Adds a collection of security-related HTTP headers to protect against common vulnerabilities (XSS, clickjacking, etc.).
+app.use(helmet_1.default.crossOriginResourcePolicy({ policy: "cross-origin" })); //Allows resources to be shared across origins (e.g., fonts, images).
+app.use((0, morgan_1.default)("common")); //Sets up HTTP request logging in the "common" format.
 app.use(body_parser_1.default.json());
-app.use(body_parser_1.default.urlencoded({ extended: false }));
-app.use((0, cors_1.default)());
+app.use(body_parser_1.default.urlencoded({ extended: false })); // parse incoming requests with application/x-www-form-urlencoded data, typically sent by HTML form submissions.
+app.use((0, cors_1.default)()); //Enables Cross-Origin Resource Sharing, allowing your API to be accessed by clients from other domains.
 /* ROUTES */
 /* user should be manager to access the route*/
 app.get("/", (req, res) => {
@@ -34,11 +34,10 @@ app.get("/", (req, res) => {
 app.use("/applications", applicationRoutes_1.default);
 app.use("/properties", propertyRoutes_1.default);
 app.use("/leases", leaseRoutes_1.default);
-// app.use("/tenants", authMiddleware(["tenant"]), tenantRoutes);
-app.use("/tenants", tenantRoutes_1.default);
+app.use("/tenants", (0, authMiddleware_1.authMiddleware)(["tenant"]), tenantRoutes_1.default);
 app.use("/managers", (0, authMiddleware_1.authMiddleware)(["manager"]), managerRoutes_1.default);
 /* SERVER */
-const port = process.env.PORT || 3002;
-app.listen(port, () => {
+const port = Number(process.env.PORT) || 3002;
+app.listen(port, "0.0.0.0", () => {
     console.log(`Server running on port ${port}`);
 });

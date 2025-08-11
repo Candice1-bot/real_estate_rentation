@@ -27,6 +27,7 @@ exports.createProperty = exports.getProperty = exports.getProperties = void 0;
 const client_1 = require("@prisma/client");
 const wkt_1 = require("@terraformer/wkt");
 const client_s3_1 = require("@aws-sdk/client-s3");
+const lib_storage_1 = require("@aws-sdk/lib-storage");
 const axios_1 = __importDefault(require("axios"));
 const prisma = new client_1.PrismaClient();
 const s3Client = new client_s3_1.S3Client({
@@ -63,7 +64,8 @@ const getProperties = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         }
         if (amenities && amenities !== "any") {
             const amenitiesArray = amenities.split(",");
-            whereConditions.push(client_1.Prisma.sql `p.amenities @> ${amenitiesArray}`);
+            const amenitiesLiteral = client_1.Prisma.sql `ARRAY[${client_1.Prisma.join(amenitiesArray.map((a) => client_1.Prisma.sql `${a}`))}]::"Amenity"[]`;
+            whereConditions.push(client_1.Prisma.sql `p.amenities @> ${amenitiesLiteral}`);
         }
         if (availableFrom && availableFrom !== "any") {
             const availableFromDate = typeof availableFrom === "string" ? availableFrom : null;
@@ -73,7 +75,7 @@ const getProperties = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                     whereConditions.push(client_1.Prisma.sql `EXISTS (
               SELECT 1 FROM "Lease" l 
               WHERE l."propertyId" = p.id 
-              AND l."startDate" <= ${date.toISOString()}
+              AND l."startDate" <= ${date.toISOString()}::timestamp
             )`);
                 }
             }
@@ -157,6 +159,19 @@ const createProperty = (req, res) => __awaiter(void 0, void 0, void 0, function*
         console.log("BODY:", req.body);
         console.log("FILES:", req.files);
         console.log("hi, i am here");
+        const photoUrls = yield Promise.all(files.map((file) => __awaiter(void 0, void 0, void 0, function* () {
+            const uploadParams = {
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: `properties/${Date.now()}-${file.originalname}`,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+            };
+            const uploadResult = yield new lib_storage_1.Upload({
+                client: s3Client,
+                params: uploadParams,
+            }).done();
+            return uploadResult.Location;
+        })));
         const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
             street: address,
             city,
@@ -185,9 +200,7 @@ const createProperty = (req, res) => __awaiter(void 0, void 0, void 0, function*
         // create property
         try {
             const newProperty = yield prisma.property.create({
-                data: Object.assign(Object.assign({}, propertyData), { 
-                    // photoUrls,
-                    locationId: location.id, managerCognitoId, amenities: typeof propertyData.amenities === "string"
+                data: Object.assign(Object.assign({}, propertyData), { photoUrls, locationId: location.id, managerCognitoId, amenities: typeof propertyData.amenities === "string"
                         ? propertyData.amenities.split(",")
                         : [], highlights: typeof propertyData.highlights === "string"
                         ? propertyData.highlights.split(",")
