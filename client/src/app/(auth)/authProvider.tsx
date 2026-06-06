@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect } from "react";
 import { Amplify } from "aws-amplify";
 
@@ -138,25 +139,35 @@ const formFields = {
 };
 
 const Auth = ({ children }: { children: React.ReactNode }) => {
+  // get current authenticated user
   const { user } = useAuthenticator((context) => [context.user]);
+
   const router = useRouter();
+  // pathname: "/dashboard/settings"
   const pathname = usePathname();
 
+  // isAuthPage: true if path is /signin or /signup
   const isAuthPage = pathname.match(/^\/(signin|signup)$/);
+
   const isDashboardPage =
     pathname.startsWith("/managers") || pathname.startsWith("/tenants");
 
   // Redirecct authenticated users away from auth pages.
   useEffect(() => {
+    //If the user is logged in and they are on /signin or /signup, redirect them to /.
     if (user && isAuthPage) {
       router.push("/");
     }
   }, [user, isAuthPage, router]);
 
   // Allow access to public pages without authentication
+  //not an auth page and not a dashboard page, namely public page
+  // public page does not need any authentication.
   if (!isAuthPage && !isDashboardPage) {
     return <>{children}</>;
   }
+
+  // for auth pages(/signin, /signup) and dashboard pages
   return (
     <div className="h-full">
       <Authenticator

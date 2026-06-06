@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { setFilters } from "@/state";
 const HeroSection = () => {
   const dispatch = useDispatch();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("Los Angeles");
   const router = useRouter();
 
   const handleLocationSearch = async () => {
@@ -19,10 +19,10 @@ const HeroSection = () => {
 
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          trimmedQuery
+          trimmedQuery,
         )}.json?access_token=${
           process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
-        }&fuzzyMatch=true`
+        }&fuzzyMatch=true`,
       );
 
       const data = await response.json();
@@ -31,13 +31,12 @@ const HeroSection = () => {
         dispatch(
           setFilters({
             location: trimmedQuery,
-            coordinates: [lat, lng],
-          })
+            coordinates: [lng, lat],
+          }),
         );
         const params = new URLSearchParams({
           location: trimmedQuery,
-          lat: lat.toString(),
-          lng: lng,
+          coordinates: `${lng}, ${lat}`,
         });
         router.push(`/search?${params.toString()}`);
       }

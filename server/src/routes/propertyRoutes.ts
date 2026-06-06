@@ -19,8 +19,7 @@ router.get("/:id", getProperty);
 router.post(
   "/",
   authMiddleware(["manager"]),
-  // upload.array("photos"),
-  upload.any(),
+  upload.array("photos"),
   createProperty
 );
 
