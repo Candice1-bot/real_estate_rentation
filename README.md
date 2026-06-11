@@ -1,6 +1,4 @@
-real-estate rentation app(https://main.d1ulictba92089.amplifyapp.com/)
-
-# Real Estate Rentation
+# [Real Estate Rental App](https://main.d1ulictba92089.amplifyapp.com/)
 
 A full-stack rental platform for browsing properties, applying online, and managing rental workflows from both the tenant and property-manager sides.
 
