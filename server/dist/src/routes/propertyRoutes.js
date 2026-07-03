@@ -12,7 +12,5 @@ const upload = (0, multer_1.default)({ storage: storage });
 const router = express_1.default.Router();
 router.get("/", propertyController_1.getProperties);
 router.get("/:id", propertyController_1.getProperty);
-router.post("/", (0, authMiddleware_1.authMiddleware)(["manager"]), 
-// upload.array("photos"),
-upload.any(), propertyController_1.createProperty);
+router.post("/", (0, authMiddleware_1.authMiddleware)(["manager"]), upload.array("photos"), propertyController_1.createProperty);
 exports.default = router;

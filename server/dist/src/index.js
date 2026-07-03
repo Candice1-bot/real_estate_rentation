@@ -16,6 +16,7 @@ const managerRoutes_1 = __importDefault(require("./routes/managerRoutes"));
 const propertyRoutes_1 = __importDefault(require("./routes/propertyRoutes"));
 const leaseRoutes_1 = __importDefault(require("./routes/leaseRoutes"));
 const applicationRoutes_1 = __importDefault(require("./routes/applicationRoutes"));
+const chatRoutes_1 = __importDefault(require("./routes/chatRoutes"));
 /* CONFIGURATIONS*/
 dotenv_1.default.config(); //loads env variables from .env in to process.en
 const app = (0, express_1.default)(); // initializes express
@@ -34,6 +35,7 @@ app.get("/", (req, res) => {
 app.use("/applications", applicationRoutes_1.default);
 app.use("/properties", propertyRoutes_1.default);
 app.use("/leases", leaseRoutes_1.default);
+app.use("/api/chat", chatRoutes_1.default);
 app.use("/tenants", (0, authMiddleware_1.authMiddleware)(["tenant"]), tenantRoutes_1.default);
 app.use("/managers", (0, authMiddleware_1.authMiddleware)(["manager"]), managerRoutes_1.default);
 /* SERVER */

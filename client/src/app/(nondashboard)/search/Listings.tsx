@@ -10,12 +10,13 @@ import {
 import { useAppSelector } from "@/state/redux";
 import { Property } from "@/types/prismaTypes";
 import React from "react";
+import ChatWidget from "./ChatWidget";
 
 const Listings = () => {
   const { data: authUser } = useGetAuthUserQuery();
   const { data: tenant } = useGetTenantQuery(
     authUser?.cognitoInfo?.userId || "",
-    { skip: !authUser?.cognitoInfo?.userId }
+    { skip: !authUser?.cognitoInfo?.userId },
   );
   const [addFavorite] = useAddFavoritePropertyMutation();
   const [removeFavorite] = useRemoveFavoritePropertyMutation();
@@ -34,7 +35,7 @@ const Listings = () => {
     if (!authUser) return;
 
     const isFavorite = tenant?.favorites?.some(
-      (fav: Property) => fav.id === propertyId
+      (fav: Property) => fav.id === propertyId,
     );
 
     if (isFavorite) {
@@ -52,8 +53,12 @@ const Listings = () => {
   if (isLoading) return <>Loading...</>;
   if (isError || !properties) return <div>Failed to fetch properties</div>;
 
+  console.log(properties);
+
   return (
     <div className="w-full">
+      <ChatWidget properties={properties} />
+
       <h3 className="text-sm px-4 font-bold">
         {properties.length}{" "}
         <span className="text-gray-700 font-normal">
@@ -70,7 +75,7 @@ const Listings = () => {
                 property={property}
                 isFavorite={
                   tenant?.favorites?.some(
-                    (fav: Property) => fav.id === property.id
+                    (fav: Property) => fav.id === property.id,
                   ) || false
                 }
                 onFavoriteToggle={() => handleFavoriteToggle(property.id)}
@@ -83,14 +88,14 @@ const Listings = () => {
                 property={property}
                 isFavorite={
                   tenant?.favorites?.some(
-                    (fav: Property) => fav.id === property.id
+                    (fav: Property) => fav.id === property.id,
                   ) || false
                 }
                 onFavoriteToggle={() => handleFavoriteToggle(property.id)}
                 showFavoriteButton={!!authUser}
                 propertyLink={`/search/${property.id}`}
               />
-            )
+            ),
           )}
         </div>
       </div>
