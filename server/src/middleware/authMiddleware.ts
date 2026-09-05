@@ -39,9 +39,7 @@ export const authMiddleware = (allowedRoles: string[]) => {
         res.status(403).json({ message: "Access Denied" });
         return;
       }
-      // next(); // ✅ Only here if everything passed
     } catch (err) {
-      console.error("Failed to decode token: ", err);
       res.status(400).json({ message: "Invalid token" });
       return;
     }

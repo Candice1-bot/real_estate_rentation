@@ -6,9 +6,11 @@
     "resolveJsonModule": true,
     "outDir": "./dist",
     "esModuleInterop": true,
+    "types": ["node", "jest"],
     "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
     "strict": true,
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["src/**/*", "src/data/**/*.json", "prisma/**/*"]
+  "include": ["src/**/*", "src/data/**/*.json", "prisma/**/*"],
+  "exclude": ["src/test/**/*", "tests/**/*", "dist", "node_modules"]
 }

@@ -9,7 +9,7 @@ router.get("/", authMiddleware(["manager", "tenant"]), getLeases);
 router.get(
   "/:id/payments",
   authMiddleware(["manager", "tenant"]),
-  getLeasePayments
+  getLeasePayments,
 );
 
 export default router;
