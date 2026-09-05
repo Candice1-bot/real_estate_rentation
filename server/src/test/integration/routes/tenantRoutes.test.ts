@@ -1,167 +1,256 @@
-import express from "express";
-import type { Express, Request, Response } from "express";
-import {
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-} from "@jest/globals";
+import { Amenity, Highlight, PrismaClient, PropertyType } from "@prisma/client";
+import { afterAll, beforeEach, describe, expect, it } from "@jest/globals";
+import jwt from "jsonwebtoken";
 import request from "supertest";
+import app from "../../../app";
 
-const mockGetTenant = jest.fn((req: Request, res: Response) => {
-  res.status(200).json({
-    controller: "getTenant",
-    cognitoId: req.params.cognitoId,
+const prisma = new PrismaClient();
+const cognitoId = "tenant-routes-test-user";
+const managerCognitoId = "tenant-routes-test-manager";
+const propertyName = "Tenant Routes Test Property";
+const locationAddress = "123 Tenant Routes Test Ave";
+const token = jwt.sign(
+  { sub: cognitoId, "custom:role": "tenant" },
+  "test-secret",
+);
+
+const authHeader = `Bearer ${token}`;
+
+const deleteTestData = async () => {
+  await prisma.property.deleteMany({
+    where: { name: propertyName },
   });
-});
 
-const mockCreateTenant = jest.fn((req: Request, res: Response) => {
-  res.status(201).json({
-    controller: "createTenant",
-    body: req.body,
+  await prisma.tenant.deleteMany({
+    where: { cognitoId },
   });
-});
 
-const mockUpdateTenant = jest.fn((req: Request, res: Response) => {
-  res.status(200).json({
-    controller: "updateTenant",
-    cognitoId: req.params.cognitoId,
-    body: req.body,
+  await prisma.manager.deleteMany({
+    where: { cognitoId: managerCognitoId },
   });
-});
 
-const mockGetCurrentResidence = jest.fn((req: Request, res: Response) => {
-  res.status(200).json({
-    controller: "getCurrentResidence",
-    cognitoId: req.params.cognitoId,
+  await prisma.location.deleteMany({
+    where: { address: locationAddress },
   });
-});
+};
 
-const mockAddFavoriteProperty = jest.fn((req: Request, res: Response) => {
-  res.status(200).json({
-    controller: "addFavoriteProperty",
-    cognitoId: req.params.cognitoId,
-    propertyId: req.params.propertyId,
+const createTestTenant = async () => {
+  return prisma.tenant.create({
+    data: {
+      cognitoId,
+      name: "Test Tenant",
+      email: "tenant@example.com",
+      phoneNumber: "555-1234",
+    },
   });
-});
+};
 
-const mockRemoveFavoriteProperty = jest.fn((req: Request, res: Response) => {
-  res.status(200).json({
-    controller: "removeFavoriteProperty",
-    cognitoId: req.params.cognitoId,
-    propertyId: req.params.propertyId,
+const createTestProperty = async () => {
+  await prisma.manager.create({
+    data: {
+      cognitoId: managerCognitoId,
+      name: "Test Manager",
+      email: "manager@example.com",
+      phoneNumber: "555-0000",
+    },
   });
-});
 
-jest.unstable_mockModule("../../../controllers/tenantControllers", () => ({
-  getTenant: mockGetTenant,
-  createTenant: mockCreateTenant,
-  updateTenant: mockUpdateTenant,
-  getCurrentResidence: mockGetCurrentResidence,
-  addFavoriteProperty: mockAddFavoriteProperty,
-  removeFavoriteProperty: mockRemoveFavoriteProperty,
-}));
+  const [location] = await prisma.$queryRaw<{ id: number }[]>`
+    INSERT INTO "Location" (
+      "country",
+      "city",
+      "state",
+      "address",
+      "postalCode",
+      "coordinates"
+    )
+    VALUES (
+      'United States',
+      'New York',
+      'NY',
+      ${locationAddress},
+      '10001',
+      ST_GeomFromText('POINT(-73.935242 40.730610)', 4326)
+    )
+    RETURNING id;
+  `;
 
-let app: Express;
-
-beforeAll(async () => {
-  const tenantRoutes = (await import("../../../routes/tenantRoutes.js"))
-    .default;
-
-  app = express();
-
-  app.use(express.json());
-
-  app.use("/tenants", tenantRoutes);
-});
+  return prisma.property.create({
+    data: {
+      name: propertyName,
+      description: "Property created for tenant route integration tests.",
+      pricePerMonth: 1500,
+      securityDeposit: 1500,
+      applicationFee: 50,
+      photoUrls: [],
+      amenities: [Amenity.AirConditioning],
+      highlights: [Highlight.HighSpeedInternetAccess],
+      isPetsAllowed: true,
+      isParkingIncluded: false,
+      beds: 1,
+      baths: 1,
+      squareFeet: 700,
+      propertyType: PropertyType.Apartment,
+      locationId: location.id,
+      managerCognitoId,
+    },
+  });
+};
 
 describe("tenantRoutes integration", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  beforeEach(async () => {
+    await deleteTestData();
   });
 
-  it("routes GET /tenants/:cognitoId to getTenant", async () => {
-    await request(app).get("/tenants/tenant-123").expect(200).expect({
-      controller: "getTenant",
-      cognitoId: "tenant-123",
-    });
-
-    expect(mockGetTenant).toHaveBeenCalledTimes(1);
+  afterAll(async () => {
+    await deleteTestData();
+    await prisma.$disconnect();
   });
 
-  it("routes POST /tenants to createTenant", async () => {
-    const newTenant = {
-      cognitoId: "tenant-123",
+  // test: router.get("/:cognitoId", getTenant);
+  // router.put("/:cognitoId", updateTenant);
+  // router.post("/", createTenant);
+  it("creates, gets, and updates a tenant in the database", async () => {
+    const tenant = {
+      cognitoId,
       name: "Test Tenant",
       email: "tenant@example.com",
       phoneNumber: "555-1234",
     };
 
-    await request(app).post("/tenants").send(newTenant).expect(201).expect({
-      controller: "createTenant",
-      body: newTenant,
+    const createResponse = await request(app)
+      .post("/tenants")
+      .set("Authorization", authHeader)
+      .send(tenant)
+      .expect(201);
+
+    expect(createResponse.body).toEqual(expect.objectContaining(tenant));
+
+    const savedTenant = await prisma.tenant.findUnique({
+      where: { cognitoId },
     });
 
-    expect(mockCreateTenant).toHaveBeenCalledTimes(1);
-  });
+    expect(savedTenant).toEqual(expect.objectContaining(tenant));
 
-  it("routes PUT /tenants/:cognitoId to updateTenant", async () => {
+    const getResponse = await request(app)
+      .get(`/tenants/${cognitoId}`)
+      .set("Authorization", authHeader)
+      .expect(200);
+
+    expect(getResponse.body).toEqual(
+      expect.objectContaining({
+        ...tenant,
+        favorites: [],
+      }),
+    );
+
     const updates = {
       name: "Updated Tenant",
       email: "updated@example.com",
       phoneNumber: "555-9999",
     };
 
-    await request(app)
-      .put("/tenants/tenant-123")
+    const updateResponse = await request(app)
+      .put(`/tenants/${cognitoId}`)
+      .set("Authorization", authHeader)
       .send(updates)
-      .expect(200)
-      .expect({
-        controller: "updateTenant",
-        cognitoId: "tenant-123",
-        body: updates,
-      });
+      .expect(200);
 
-    expect(mockUpdateTenant).toHaveBeenCalledTimes(1);
+    expect(updateResponse.body).toEqual(
+      expect.objectContaining({
+        cognitoId,
+        ...updates,
+      }),
+    );
+
+    const updatedTenant = await prisma.tenant.findUnique({
+      where: { cognitoId },
+    });
+
+    expect(updatedTenant).toEqual(
+      expect.objectContaining({
+        cognitoId,
+        ...updates,
+      }),
+    );
   });
 
-  it("routes GET /tenants/:cognitoId/current-residences to getCurrentResidence", async () => {
-    await request(app)
-      .get("/tenants/tenant-123/current-residences")
-      .expect(200)
-      .expect({
-        controller: "getCurrentResidence",
-        cognitoId: "tenant-123",
-      });
+  // test: router.get("/:cognitoId/current-residences", getCurrentResidence);
+  it("gets a tenant's current residences from the database", async () => {
+    await createTestTenant();
+    const property = await createTestProperty();
 
-    expect(mockGetCurrentResidence).toHaveBeenCalledTimes(1);
+    await prisma.tenant.update({
+      where: { cognitoId },
+      data: {
+        properties: {
+          connect: { id: property.id },
+        },
+      },
+    });
+
+    const response = await request(app)
+      .get(`/tenants/${cognitoId}/current-residences`)
+      .set("Authorization", authHeader)
+      .expect(200);
+
+    expect(response.body).toEqual([
+      expect.objectContaining({
+        id: property.id,
+        name: propertyName,
+        location: expect.objectContaining({
+          address: locationAddress,
+          coordinates: {
+            longitude: -73.935242,
+            latitude: 40.73061,
+          },
+        }),
+      }),
+    ]);
   });
 
-  it("routes POST /tenants/:cognitoId/favorites/:propertyId to addFavoriteProperty", async () => {
-    await request(app)
-      .post("/tenants/tenant-123/favorites/42")
-      .expect(200)
-      .expect({
-        controller: "addFavoriteProperty",
-        cognitoId: "tenant-123",
-        propertyId: "42",
-      });
+  // test: router.post("/:cognitoId/favorites/:propertyId", addFavoriteProperty);
+  // router.delete("/:cognitoId/favorites/:propertyId", removeFavoriteProperty);
+  it("adds and removes a favorite property in the database", async () => {
+    await createTestTenant();
+    const property = await createTestProperty();
 
-    expect(mockAddFavoriteProperty).toHaveBeenCalledTimes(1);
-  });
+    const addResponse = await request(app)
+      .post(`/tenants/${cognitoId}/favorites/${property.id}`)
+      .set("Authorization", authHeader)
+      .expect(200);
 
-  it("routes DELETE /tenants/:cognitoId/favorites/:propertyId to removeFavoriteProperty", async () => {
-    await request(app)
-      .delete("/tenants/tenant-123/favorites/42")
-      .expect(200)
-      .expect({
-        controller: "removeFavoriteProperty",
-        cognitoId: "tenant-123",
-        propertyId: "42",
-      });
+    expect(addResponse.body.favorites).toEqual([
+      expect.objectContaining({
+        id: property.id,
+        name: propertyName,
+      }),
+    ]);
 
-    expect(mockRemoveFavoriteProperty).toHaveBeenCalledTimes(1);
+    const tenantWithFavorite = await prisma.tenant.findUnique({
+      where: { cognitoId },
+      include: { favorites: true },
+    });
+
+    expect(tenantWithFavorite?.favorites).toEqual([
+      expect.objectContaining({
+        id: property.id,
+        name: propertyName,
+      }),
+    ]);
+
+    const removeResponse = await request(app)
+      .delete(`/tenants/${cognitoId}/favorites/${property.id}`)
+      .set("Authorization", authHeader)
+      .expect(200);
+
+    expect(removeResponse.body.favorites).toEqual([]);
+
+    const tenantWithoutFavorite = await prisma.tenant.findUnique({
+      where: { cognitoId },
+      include: { favorites: true },
+    });
+
+    expect(tenantWithoutFavorite?.favorites).toEqual([]);
   });
 });

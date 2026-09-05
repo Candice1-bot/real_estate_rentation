@@ -80,9 +80,9 @@ const getCurrentResidence = (req, res) => __awaiter(void 0, void 0, void 0, func
         const residencesWithFormattedLocations = yield Promise.all(properties.map((property) => __awaiter(void 0, void 0, void 0, function* () {
             var _a;
             const coordinates = yield prisma.$queryRaw `SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id} `;
-            const geoJSON = (0, wkt_1.wktToGeoJSON)(((_a = coordinates[0]) === null || _a === void 0 ? void 0 : _a.coordiantes) || "");
-            const longitude = geoJSON.coordiantes[0];
-            const latitude = geoJSON.coordiantes[1];
+            const geoJSON = (0, wkt_1.wktToGeoJSON)(((_a = coordinates[0]) === null || _a === void 0 ? void 0 : _a.coordinates) || "");
+            const longitude = geoJSON.coordinates[0];
+            const latitude = geoJSON.coordinates[1];
             return Object.assign(Object.assign({}, property), { location: Object.assign(Object.assign({}, property.location), { coordinates: { longitude, latitude } }) });
         })));
         res.json(residencesWithFormattedLocations);

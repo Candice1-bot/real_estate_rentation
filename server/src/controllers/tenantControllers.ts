@@ -85,12 +85,12 @@ export const getCurrentResidence = async (
 
     const residencesWithFormattedLocations = await Promise.all(
       properties.map(async (property) => {
-        const coordinates: { coordiantes: string }[] =
+        const coordinates: { coordinates: string }[] =
           await prisma.$queryRaw`SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id} `;
 
-        const geoJSON: any = wktToGeoJSON(coordinates[0]?.coordiantes || "");
-        const longitude = geoJSON.coordiantes[0];
-        const latitude = geoJSON.coordiantes[1];
+        const geoJSON: any = wktToGeoJSON(coordinates[0]?.coordinates || "");
+        const longitude = geoJSON.coordinates[0];
+        const latitude = geoJSON.coordinates[1];
 
         return {
           ...property,
