@@ -78,7 +78,6 @@ export const getManagerProperties = async (
   try {
     const { cognitoId } = req.params;
 
-    console.log(cognitoId);
     const properties = await prisma.property.findMany({
       where: { managerCognitoId: cognitoId },
       include: {

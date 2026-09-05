@@ -70,7 +70,6 @@ exports.updateManager = updateManager;
 const getManagerProperties = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { cognitoId } = req.params;
-        console.log(cognitoId);
         const properties = yield prisma.property.findMany({
             where: { managerCognitoId: cognitoId },
             include: {
