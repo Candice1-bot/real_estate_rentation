@@ -28,6 +28,32 @@ describe("authMiddleware", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it('returns 401 when authorization header is "Bearer" with no token', () => {
+    const req = createRequest("Bearer");
+    const res = createResponse();
+    const next: NextFunction = jest.fn();
+
+    authMiddleware(["tenant"])(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ message: "Unauthorized" });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 when user has no "custom:role" claim', () => {
+    const token = jwt.sign({ sub: "user-123" }, "test-secret");
+    const req = createRequest(`Bearer ${token}`);
+    const res = createResponse();
+    const next: NextFunction = jest.fn();
+
+    authMiddleware(["tenant"])(req, res, next);
+
+    expect(req.user).toEqual({ id: "user-123", role: "" });
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ message: "Access Denied" });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("returns 400 when the token cannot be decoded", () => {
     const req = createRequest("Bearer invalid-token");
     const res = createResponse();
