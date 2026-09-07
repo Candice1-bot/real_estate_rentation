@@ -16,12 +16,13 @@ const listApplication = (req, res) => __awaiter(void 0, void 0, void 0, function
     try {
         const { userId, userType } = req.query;
         let whereClause = {};
-        if (userId && userType) {
-            if (userType === "Tenant")
-                whereClause = { tenantCognitoId: String(userId) };
+        const normalizedUserType = typeof userType === "string" ? userType.toLowerCase() : "";
+        if (userId && normalizedUserType === "tenant") {
+            whereClause = { tenantCognitoId: String(userId) };
         }
-        else if (userType === "manager")
+        else if (userId && normalizedUserType === "manager") {
             whereClause = { property: { managerCognitoId: String(userId) } };
+        }
         const applications = yield prisma.application.findMany({
             where: whereClause,
             include: {
@@ -137,7 +138,7 @@ const updateApplicationStatus = (req, res) => __awaiter(void 0, void 0, void 0, 
             return;
         }
         // if application is approved, then create a new lease.
-        if (status === "approved") {
+        if (status === "Approved") {
             const newLease = yield prisma.lease.create({
                 data: {
                     startDate: new Date(),

@@ -13,11 +13,14 @@ export const listApplication = async (
 
     let whereClause = {};
 
-    if (userId && userType) {
-      if (userType === "Tenant")
-        whereClause = { tenantCognitoId: String(userId) };
-    } else if (userType === "manager")
+    const normalizedUserType =
+      typeof userType === "string" ? userType.toLowerCase() : "";
+
+    if (userId && normalizedUserType === "tenant") {
+      whereClause = { tenantCognitoId: String(userId) };
+    } else if (userId && normalizedUserType === "manager") {
       whereClause = { property: { managerCognitoId: String(userId) } };
+    }
 
     const applications = await prisma.application.findMany({
       where: whereClause,
@@ -171,7 +174,7 @@ export const updateApplicationStatus = async (
     }
 
     // if application is approved, then create a new lease.
-    if (status === "approved") {
+    if (status === "Approved") {
       const newLease = await prisma.lease.create({
         data: {
           startDate: new Date(),
