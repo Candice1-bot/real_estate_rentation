@@ -156,9 +156,6 @@ const createProperty = (req, res) => __awaiter(void 0, void 0, void 0, function*
     try {
         const files = req.files;
         const _e = req.body, { address, city, state, country, postalCode, managerCognitoId } = _e, propertyData = __rest(_e, ["address", "city", "state", "country", "postalCode", "managerCognitoId"]);
-        console.log("BODY:", req.body);
-        console.log("FILES:", req.files);
-        console.log("hi, i am here");
         const photoUrls = yield Promise.all(files.map((file) => __awaiter(void 0, void 0, void 0, function* () {
             const uploadParams = {
                 Bucket: process.env.S3_BUCKET_NAME,
@@ -197,27 +194,18 @@ const createProperty = (req, res) => __awaiter(void 0, void 0, void 0, function*
       VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
       RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
     `;
-        // create property
-        try {
-            const newProperty = yield prisma.property.create({
-                data: Object.assign(Object.assign({}, propertyData), { photoUrls, locationId: location.id, managerCognitoId, amenities: typeof propertyData.amenities === "string"
-                        ? propertyData.amenities.split(",")
-                        : [], highlights: typeof propertyData.highlights === "string"
-                        ? propertyData.highlights.split(",")
-                        : [], isPetsAllowed: propertyData.isPetsAllowed === "true", isParkingIncluded: propertyData.isParkingIncluded === "true", pricePerMonth: parseFloat(propertyData.pricePerMonth), securityDeposit: parseFloat(propertyData.securityDeposit), applicationFee: parseFloat(propertyData.applicationFee), beds: parseInt(propertyData.beds), baths: parseFloat(propertyData.baths), squareFeet: parseInt(propertyData.squareFeet) }),
-                include: {
-                    location: true,
-                    manager: true,
-                },
-            });
-            res.status(201).json(newProperty);
-        }
-        catch (error) {
-            console.error("Error creating property:", error);
-        }
-        finally {
-            console.log("finally");
-        }
+        const newProperty = yield prisma.property.create({
+            data: Object.assign(Object.assign({}, propertyData), { photoUrls, locationId: location.id, managerCognitoId, amenities: typeof propertyData.amenities === "string"
+                    ? propertyData.amenities.split(",")
+                    : [], highlights: typeof propertyData.highlights === "string"
+                    ? propertyData.highlights.split(",")
+                    : [], isPetsAllowed: propertyData.isPetsAllowed === "true", isParkingIncluded: propertyData.isParkingIncluded === "true", pricePerMonth: parseFloat(propertyData.pricePerMonth), securityDeposit: parseFloat(propertyData.securityDeposit), applicationFee: parseFloat(propertyData.applicationFee), beds: parseInt(propertyData.beds), baths: parseFloat(propertyData.baths), squareFeet: parseInt(propertyData.squareFeet) }),
+            include: {
+                location: true,
+                manager: true,
+            },
+        });
+        res.status(201).json(newProperty);
     }
     catch (err) {
         res

@@ -210,9 +210,6 @@ export const createProperty = async (
       managerCognitoId,
       ...propertyData
     } = req.body;
-    console.log("BODY:", req.body);
-    console.log("FILES:", req.files);
-    console.log("hi, i am here");
 
     const photoUrls = await Promise.all(
       files.map(async (file) => {
@@ -262,43 +259,36 @@ export const createProperty = async (
       RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
     `;
 
-    // create property
-    try {
-      const newProperty = await prisma.property.create({
-        data: {
-          ...propertyData,
-          photoUrls,
-          locationId: location.id,
-          managerCognitoId,
-          amenities:
-            typeof propertyData.amenities === "string"
-              ? propertyData.amenities.split(",")
-              : [],
-          highlights:
-            typeof propertyData.highlights === "string"
-              ? propertyData.highlights.split(",")
-              : [],
-          isPetsAllowed: propertyData.isPetsAllowed === "true",
-          isParkingIncluded: propertyData.isParkingIncluded === "true",
-          pricePerMonth: parseFloat(propertyData.pricePerMonth),
-          securityDeposit: parseFloat(propertyData.securityDeposit),
-          applicationFee: parseFloat(propertyData.applicationFee),
-          beds: parseInt(propertyData.beds),
-          baths: parseFloat(propertyData.baths),
-          squareFeet: parseInt(propertyData.squareFeet),
-        },
-        include: {
-          location: true,
-          manager: true,
-        },
-      });
+    const newProperty = await prisma.property.create({
+      data: {
+        ...propertyData,
+        photoUrls,
+        locationId: location.id,
+        managerCognitoId,
+        amenities:
+          typeof propertyData.amenities === "string"
+            ? propertyData.amenities.split(",")
+            : [],
+        highlights:
+          typeof propertyData.highlights === "string"
+            ? propertyData.highlights.split(",")
+            : [],
+        isPetsAllowed: propertyData.isPetsAllowed === "true",
+        isParkingIncluded: propertyData.isParkingIncluded === "true",
+        pricePerMonth: parseFloat(propertyData.pricePerMonth),
+        securityDeposit: parseFloat(propertyData.securityDeposit),
+        applicationFee: parseFloat(propertyData.applicationFee),
+        beds: parseInt(propertyData.beds),
+        baths: parseFloat(propertyData.baths),
+        squareFeet: parseInt(propertyData.squareFeet),
+      },
+      include: {
+        location: true,
+        manager: true,
+      },
+    });
 
-      res.status(201).json(newProperty);
-    } catch (error) {
-      console.error("Error creating property:", error);
-    } finally {
-      console.log("finally");
-    }
+    res.status(201).json(newProperty);
   } catch (err: any) {
     res
       .status(500)
