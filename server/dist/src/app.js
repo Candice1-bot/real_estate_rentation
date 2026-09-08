@@ -18,15 +18,15 @@ const leaseRoutes_1 = __importDefault(require("./routes/leaseRoutes"));
 const applicationRoutes_1 = __importDefault(require("./routes/applicationRoutes"));
 const chatRoutes_1 = __importDefault(require("./routes/chatRoutes"));
 /* CONFIGURATIONS*/
-dotenv_1.default.config(); //loads env variables from .env in to process.en
-const app = (0, express_1.default)(); // initializes express
-app.use(express_1.default.json()); // parses incoming requests with JSON payloads into req.body.
-app.use((0, helmet_1.default)()); //Adds a collection of security-related HTTP headers to protect against common vulnerabilities (XSS, clickjacking, etc.).
-app.use(helmet_1.default.crossOriginResourcePolicy({ policy: "cross-origin" })); //Allows resources to be shared across origins (e.g., fonts, images).
-app.use((0, morgan_1.default)("common")); //Sets up HTTP request logging in the "common" format.
+dotenv_1.default.config();
+const app = (0, express_1.default)();
+app.use(express_1.default.json());
+app.use((0, helmet_1.default)());
+app.use(helmet_1.default.crossOriginResourcePolicy({ policy: "cross-origin" }));
+app.use((0, morgan_1.default)("common"));
 app.use(body_parser_1.default.json());
-app.use(body_parser_1.default.urlencoded({ extended: false })); // parse incoming requests with application/x-www-form-urlencoded data, typically sent by HTML form submissions.
-app.use((0, cors_1.default)()); //Enables Cross-Origin Resource Sharing, allowing your API to be accessed by clients from other domains.
+app.use(body_parser_1.default.urlencoded({ extended: false }));
+app.use((0, cors_1.default)());
 /* ROUTES */
 /* user should be manager to access the route*/
 app.get("/", (req, res) => {

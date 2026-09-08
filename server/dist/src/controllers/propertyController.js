@@ -132,17 +132,19 @@ const getProperty = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 location: true,
             },
         });
-        if (property) {
-            const coordinates = yield prisma.$queryRaw `SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id}`;
-            const geoJSON = (0, wkt_1.wktToGeoJSON)(((_a = coordinates[0]) === null || _a === void 0 ? void 0 : _a.coordinates) || "");
-            const longitude = geoJSON.coordinates[0];
-            const latitude = geoJSON.coordinates[1];
-            const propertyWithCoordinates = Object.assign(Object.assign({}, property), { location: Object.assign(Object.assign({}, property.location), { coordinates: {
-                        longitude,
-                        latitude,
-                    } }) });
-            res.json(propertyWithCoordinates);
+        if (!property) {
+            res.status(404).json({ message: "Property not found" });
+            return;
         }
+        const coordinates = yield prisma.$queryRaw `SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id}`;
+        const geoJSON = (0, wkt_1.wktToGeoJSON)(((_a = coordinates[0]) === null || _a === void 0 ? void 0 : _a.coordinates) || "");
+        const longitude = geoJSON.coordinates[0];
+        const latitude = geoJSON.coordinates[1];
+        const propertyWithCoordinates = Object.assign(Object.assign({}, property), { location: Object.assign(Object.assign({}, property.location), { coordinates: {
+                    longitude,
+                    latitude,
+                } }) });
+        res.json(propertyWithCoordinates);
     }
     catch (err) {
         res
@@ -152,10 +154,10 @@ const getProperty = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.getProperty = getProperty;
 const createProperty = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
+    var _a;
     try {
-        const files = req.files;
-        const _e = req.body, { address, city, state, country, postalCode, managerCognitoId } = _e, propertyData = __rest(_e, ["address", "city", "state", "country", "postalCode", "managerCognitoId"]);
+        const files = (_a = req.files) !== null && _a !== void 0 ? _a : [];
+        const _b = req.body, { address, city, state, country, postalCode, managerCognitoId } = _b, propertyData = __rest(_b, ["address", "city", "state", "country", "postalCode", "managerCognitoId"]);
         const photoUrls = yield Promise.all(files.map((file) => __awaiter(void 0, void 0, void 0, function* () {
             const uploadParams = {
                 Bucket: process.env.S3_BUCKET_NAME,
@@ -182,12 +184,13 @@ const createProperty = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 "User-Agent": "RealEstateApp (justsomedummyemail@gmail.com",
             },
         });
-        const [longitude, latitude] = ((_a = geocodingResponse.data[0]) === null || _a === void 0 ? void 0 : _a.lon) && ((_b = geocodingResponse.data[0]) === null || _b === void 0 ? void 0 : _b.lat)
-            ? [
-                parseFloat((_c = geocodingResponse.data[0]) === null || _c === void 0 ? void 0 : _c.lon),
-                parseFloat((_d = geocodingResponse.data[0]) === null || _d === void 0 ? void 0 : _d.lat),
-            ]
-            : [0, 0];
+        const [geocodingResult] = geocodingResponse.data;
+        let longitude = 0;
+        let latitude = 0;
+        if ((geocodingResult === null || geocodingResult === void 0 ? void 0 : geocodingResult.lon) && geocodingResult.lat) {
+            longitude = parseFloat(geocodingResult.lon);
+            latitude = parseFloat(geocodingResult.lat);
+        }
         // create location
         const [location] = yield prisma.$queryRaw `
       INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)

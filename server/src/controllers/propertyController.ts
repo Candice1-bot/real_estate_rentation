@@ -2,11 +2,17 @@ import { Request, Response } from "express";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { wktToGeoJSON } from "@terraformer/wkt";
 import { S3Client } from "@aws-sdk/client-s3";
-import { Location } from "@prisma/client";
+import type { Location } from "@prisma/client";
 import { Upload } from "@aws-sdk/lib-storage";
 import axios from "axios";
 
 const prisma = new PrismaClient();
+
+type UploadedFile = {
+  originalname: string;
+  buffer: Buffer;
+  mimetype: string;
+};
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
@@ -168,26 +174,29 @@ export const getProperty = async (
       },
     });
 
-    if (property) {
-      const coordinates: { coordinates: string }[] =
-        await prisma.$queryRaw`SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id}`;
-
-      const geoJSON: any = wktToGeoJSON(coordinates[0]?.coordinates || "");
-      const longitude = geoJSON.coordinates[0];
-      const latitude = geoJSON.coordinates[1];
-
-      const propertyWithCoordinates = {
-        ...property,
-        location: {
-          ...property.location,
-          coordinates: {
-            longitude,
-            latitude,
-          },
-        },
-      };
-      res.json(propertyWithCoordinates);
+    if (!property) {
+      res.status(404).json({ message: "Property not found" });
+      return;
     }
+
+    const coordinates: { coordinates: string }[] =
+      await prisma.$queryRaw`SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id}`;
+
+    const geoJSON: any = wktToGeoJSON(coordinates[0]?.coordinates || "");
+    const longitude = geoJSON.coordinates[0];
+    const latitude = geoJSON.coordinates[1];
+
+    const propertyWithCoordinates = {
+      ...property,
+      location: {
+        ...property.location,
+        coordinates: {
+          longitude,
+          latitude,
+        },
+      },
+    };
+    res.json(propertyWithCoordinates);
   } catch (err: any) {
     res
       .status(500)
@@ -200,7 +209,7 @@ export const createProperty = async (
   res: Response
 ): Promise<void> => {
   try {
-    const files = req.files as Express.Multer.File[];
+    const files = (req as Request & { files?: UploadedFile[] }).files ?? [];
     const {
       address,
       city,
@@ -244,13 +253,14 @@ export const createProperty = async (
         "User-Agent": "RealEstateApp (justsomedummyemail@gmail.com",
       },
     });
-    const [longitude, latitude] =
-      geocodingResponse.data[0]?.lon && geocodingResponse.data[0]?.lat
-        ? [
-            parseFloat(geocodingResponse.data[0]?.lon),
-            parseFloat(geocodingResponse.data[0]?.lat),
-          ]
-        : [0, 0];
+    const [geocodingResult] = geocodingResponse.data;
+    let longitude = 0;
+    let latitude = 0;
+
+    if (geocodingResult?.lon && geocodingResult.lat) {
+      longitude = parseFloat(geocodingResult.lon);
+      latitude = parseFloat(geocodingResult.lat);
+    }
 
     // create location
     const [location] = await prisma.$queryRaw<Location[]>`

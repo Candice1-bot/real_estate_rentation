@@ -109,8 +109,8 @@ export const createApplication = async (
           endDate: new Date(
             new Date().setFullYear(new Date().getFullYear() + 1)
           ),
-          rent: property?.pricePerMonth,
-          deposit: property?.securityDeposit,
+          rent: property.pricePerMonth,
+          deposit: property.securityDeposit,
           property: {
             connect: { id: propertyId },
           },
@@ -182,7 +182,7 @@ export const updateApplicationStatus = async (
             new Date().setFullYear(new Date().getFullYear() + 1)
           ),
           rent: application.property.pricePerMonth,
-          deposit: application.property?.securityDeposit,
+          deposit: application.property.securityDeposit,
           propertyId: application.propertyId,
           tenantCognitoId: application.tenantCognitoId,
         },

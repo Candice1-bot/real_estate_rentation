@@ -65,7 +65,7 @@ export const updateTenant = async (
   } catch (error: any) {
     res
       .status(500)
-      .json({ message: `Error updating manager: ${error.message}` });
+      .json({ message: `Error updating tenant: ${error.message}` });
   }
 };
 
@@ -106,7 +106,9 @@ export const getCurrentResidence = async (
   } catch (error: any) {
     res
       .status(500)
-      .json({ message: `Error retrieving manager property: ${error.message}` });
+      .json({
+        message: `Error retrieving current residences: ${error.message}`,
+      });
   }
 };
 

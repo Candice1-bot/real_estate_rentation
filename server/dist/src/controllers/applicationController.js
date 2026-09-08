@@ -80,8 +80,8 @@ const createApplication = (req, res) => __awaiter(void 0, void 0, void 0, functi
                 data: {
                     startDate: new Date(),
                     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-                    rent: property === null || property === void 0 ? void 0 : property.pricePerMonth,
-                    deposit: property === null || property === void 0 ? void 0 : property.securityDeposit,
+                    rent: property.pricePerMonth,
+                    deposit: property.securityDeposit,
                     property: {
                         connect: { id: propertyId },
                     },
@@ -125,7 +125,6 @@ const createApplication = (req, res) => __awaiter(void 0, void 0, void 0, functi
 });
 exports.createApplication = createApplication;
 const updateApplicationStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -144,7 +143,7 @@ const updateApplicationStatus = (req, res) => __awaiter(void 0, void 0, void 0, 
                     startDate: new Date(),
                     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
                     rent: application.property.pricePerMonth,
-                    deposit: (_a = application.property) === null || _a === void 0 ? void 0 : _a.securityDeposit,
+                    deposit: application.property.securityDeposit,
                     propertyId: application.propertyId,
                     tenantCognitoId: application.tenantCognitoId,
                 },

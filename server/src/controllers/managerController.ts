@@ -45,7 +45,7 @@ export const createManager = async (
   } catch (error: any) {
     res
       .status(500)
-      .json({ message: `Error creating tenant: ${error.message}` });
+      .json({ message: `Error creating manager: ${error.message}` });
   }
 };
 
@@ -67,7 +67,7 @@ export const updateManager = async (
   } catch (error: any) {
     res
       .status(500)
-      .json({ message: `Error updating Manager: ${error.message}` });
+      .json({ message: `Error updating manager: ${error.message}` });
   }
 };
 

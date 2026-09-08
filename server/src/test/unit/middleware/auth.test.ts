@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { describe, expect, it, jest } from "@jest/globals";
 import jwt from "jsonwebtoken";
-import { authMiddleware } from "../../middleware/authMiddleware";
+import { authMiddleware } from "../../../middleware/authMiddleware";
 
 const createResponse = () => {
   const res = {} as Response;

@@ -15,16 +15,16 @@ import applicationRoutes from "./routes/applicationRoutes";
 import chatRoutes from "./routes/chatRoutes";
 
 /* CONFIGURATIONS*/
-dotenv.config(); //loads env variables from .env in to process.en
-const app = express(); // initializes express
+dotenv.config();
+const app = express();
 
-app.use(express.json()); // parses incoming requests with JSON payloads into req.body.
-app.use(helmet()); //Adds a collection of security-related HTTP headers to protect against common vulnerabilities (XSS, clickjacking, etc.).
-app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" })); //Allows resources to be shared across origins (e.g., fonts, images).
-app.use(morgan("common")); //Sets up HTTP request logging in the "common" format.
+app.use(express.json());
+app.use(helmet());
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
+app.use(morgan("common"));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false })); // parse incoming requests with application/x-www-form-urlencoded data, typically sent by HTML form submissions.
-app.use(cors()); //Enables Cross-Origin Resource Sharing, allowing your API to be accessed by clients from other domains.
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cors());
 
 /* ROUTES */
 /* user should be manager to access the route*/
